@@ -24,3 +24,8 @@ func Get(key string) (string, error) {
 	}
 	return "", ErrKeyNotFound
 }
+
+func Delete(key string) error {
+	delete(store, key)
+	return nil
+}

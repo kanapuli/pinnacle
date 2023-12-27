@@ -47,7 +47,8 @@ func keyValueGetHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	store = make(map[string]string)
 	r := mux.NewRouter()
-	r.HandleFunc("/v1/{key}", keyValuePutHandler).Methods("PUT", "GET")
+	r.HandleFunc("/v1/{key}", keyValuePutHandler).Methods("PUT")
+	r.HandleFunc("/v1/{key}", keyValueGetHandler).Methods("GET")
 	log.Println("Listening on port 8080")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {

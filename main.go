@@ -11,11 +11,6 @@ import (
 
 var store map[string]string
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
-	_, _ = w.Write([]byte("Success"))
-}
-
 func keyValuePutHandler(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	key := v["key"]
@@ -35,10 +30,24 @@ func keyValuePutHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func keyValueGetHandler(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	key := v["key"]
+
+	value, err := Get(key)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(value))
+}
+
 func main() {
 	store = make(map[string]string)
 	r := mux.NewRouter()
-	r.HandleFunc("/v1/{key}", keyValuePutHandler).Methods("PUT")
+	r.HandleFunc("/v1/{key}", keyValuePutHandler).Methods("PUT", "GET")
 	log.Println("Listening on port 8080")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {

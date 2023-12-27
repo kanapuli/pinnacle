@@ -5,11 +5,15 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/mux"
 )
 
-var store map[string]string
+var store = struct {
+	sync.RWMutex
+	m map[string]string
+}{m: make(map[string]string)}
 
 func keyValuePutHandler(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
@@ -45,7 +49,6 @@ func keyValueGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	store = make(map[string]string)
 	r := mux.NewRouter()
 	r.HandleFunc("/v1/{key}", keyValuePutHandler).Methods("PUT")
 	r.HandleFunc("/v1/{key}", keyValueGetHandler).Methods("GET")
@@ -58,8 +61,10 @@ func main() {
 }
 
 func Put(key, value string) error {
+	store.Lock()
 	// make the put operation idempotent
-	store[key] = value
+	store.m[key] = value
+	store.Unlock()
 	return nil
 }
 
@@ -68,13 +73,18 @@ var (
 )
 
 func Get(key string) (string, error) {
-	if v, ok := store[key]; ok {
-		return v, nil
+	store.Lock()
+	v, ok := store.m[key]
+	store.Unlock()
+	if !ok {
+		return "", ErrKeyNotFound
 	}
-	return "", ErrKeyNotFound
+	return v, nil
 }
 
 func Delete(key string) error {
-	delete(store, key)
+	store.Lock()
+	delete(store.m, key)
+	store.Unlock()
 	return nil
 }
